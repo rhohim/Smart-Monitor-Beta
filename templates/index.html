@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+
+<head> 
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="refresh" content="86400" />
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700&family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/grt-youtube-popup.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
+    </script>
+    <title>CBN</title>
+</head>
+
+<body>
+
+
+    <nav class="navbar navbar-expand-md navbar-light bg-light mb-3">
+        <div class="navbar-collapse collapse w-100 order-1 order-md-0 dual-collapse2">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link">
+                        <strong>
+                        <span id="printDate">Loading..</span>
+                        <span id="printDay"></span>
+                        <span id="printTime"></span>
+                        </strong>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="mx-auto order-0">
+            <a class="navbar-brand mx-auto" href="#">Hi Vox! <span class="thin" id="greetings">Good Evening.</span></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".dual-collapse2">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse w-100 order-3 dual-collapse2">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" id="checkOnline"></a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col col-xl-12">
+                <div class="card card-body h-100 border-0 anoun">
+                    <marquee width="100%" direction="left" scrollamount="10" id="todayNews">
+                        📢: Loading....
+                    </marquee>
+                </div>
+            </div>
+            <div class="col col-xl-2 py-3">
+                <div class="card card-body h-100 text-left border-0 card-wheater">
+                    <div class="wheater">
+                        <div id="location">
+                            <p>Unable to Fetch Weather</p>
+                        </div>
+                        <div class="weather">
+                            <div class="c">Error</div>
+                            <div class="circle"></div>
+                        </div>
+                        <img src="" alt="" srcset="" id="weather-icon">
+                        <div class="desc">No Information Available.</div>
+                        <div>
+                        </div>
+                        <div class="latlon">
+                            <p>
+                                <span id="lastLat"></span>
+                                <span id="lastLon"></span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-xl-4 py-3">
+                <div class="card card-body h-100 text-left border-0 webcam">
+                    <!-- <video autoplay="true" id="videoElement">
+                    </video> -->
+                    <img src="{{url_for('video')}}" class="videoFlask" width="100%">
+                    <p class="overlay">
+                        Hi Agis
+                    </p>
+                </div>
+            </div>
+            <div class="col col-xl-3 py-3">
+                <div class="card card-body h-100 text-left border-0 youtube">
+                    <div class="yt-content">
+                        <div class="card-content text-center pt-4">
+                            <img src="/static/asets/logocvox.png" width="30%" alt="">
+                            <p class="pt-2"><span>●</span> Live Counting Subscribers</p>
+                        </div>
+                        <h2 class="card-title" id="subCount">
+                            Loading..
+                        </h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-xl-3 py-3">
+                <div class="card card-body h-100 text-left border-0">
+                    <h4 class="card-title">
+                        Sentiment Analytics
+                    </h4>
+                    <p class="card-text text-secondary">
+                        Last 30 Days:
+                    </p>
+                    <div class="row pt-4 sentiment">
+                        <div class="col col-xl-4 text-center negative">
+                            <p>
+                                <i class="fa-solid fa-face-frown fa-3x"></i><br> Negative<br><span id="negative">0</span> Comments
+                            </p>
+                        </div>
+                        <div class="col col-xl-4 text-center neutral">
+                            <p>
+                                <i class="fa-solid fa-face-meh fa-3x"></i><br> Neutral<br><span id="neutral">0</span> Comments
+                            </p>
+                        </div>
+                        <div class="col col-xl-4 text-center positive">
+                            <p>
+                                <i class="fa-solid fa-face-smile fa-3x"></i><br> Positive<br><span id="positive">0</span> Comments
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-xl-3 py-3">
+                <div class="card card-body h-100 text-left border-0 trending">
+                    <p class="card-text text-dark">
+                        Most Daily Trending Keyword:
+                    </p>
+                    <h4>
+                        <span class="badge badge-secondary">{{trend1}}</span>
+                        <span class="badge badge-secondary">{{trend2}}</span>
+                        <span class="badge badge-secondary">{{trend3}}</span>
+                        <span class="badge badge-secondary">{{trend4}}</span>
+                    </h4>
+                </div>
+            </div>
+            <div class="col col-xl-3 py-3">
+                <div class="card card-body h-100 text-left border-0 on-air">
+                    <img src="/static/asets/studio.jpg" alt="">
+                    <div class="remark-overlay">
+                        <div class="inner-text">
+                            <h1>ON AIR</h1>
+                            <p>Ternyata Begini 100 Orang</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-xl-2 py-3">
+                <div class="card card-body h-100 text-left border-0 sosmed">
+                    <p class="card-text text-dark">
+                        <i class="fa-solid fa-magnifying-glass"></i>Keyword Proposion:
+                    </p>
+                    <h2 class="card-title py-1" id="keywordP">
+                        Loading...
+                    </h2>
+                    <p class="card-text text-secondary" id="keywordDate">
+                        Loading...
+                    </p>
+                    <div class="decor">
+                    </div>
+                </div>
+            </div>
+            <div class="col col-xl-2 py-3">
+                <div class="card card-body h-100 text-left border-0 sosmed">
+                    <p class="card-text text-dark">
+                        <i class="fa-solid fa-newspaper"></i>Article Total:
+                    </p>
+                    <h2 class="card-title py-1">
+                        {{total}}
+                    </h2>
+                    <p class="card-text text-secondary">
+                        Latest Update
+                    </p>
+                    <div class="decor article"></div>
+                </div>
+            </div>
+            <div class="col col-xl-2 py-3">
+                <div class="card card-body h-100 text-left border-0 sosmed">
+                    <p class="card-text text-dark">
+                        <i class="fa-solid fa-user"></i>Website Visitor:
+                    </p>
+                    <h2 class="card-title py-1" id="keywordPr">
+                        Loading..
+                    </h2>
+                    <p class="card-text text-secondary">
+                        <i class="fa-solid fa-chart-line"></i>Last 28 Days
+                    </p>
+                    <div class="decor website"></div>
+                </div>
+            </div>
+            <div class="col col-xl-3 py-3">
+                <div class="card card-body h-100 text-left border-0 audience lastvid">
+                    <img src="https://via.placeholder.com/100x100" id="thumbnail" alt="">
+                    <div class="playbutton">
+                        <a href="#myModal" class="round-button youtube-link video-btn stretched-link" id="lastVidId" data-toggle="modal"><i class="fa fa-play fa-2x"></i></a>
+                    </div>
+                    <div class="overlay-text ">
+                        <a>
+                            <h5 class="card-title text-light " id="videoLast">
+                                Loading..
+                            </h5>
+                        </a>
+                        <p class="card-text small ">
+                            Date Publish: <span id="dateVideo">Loading..</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-xl-2 py-3">
+                <div class="card card-body h-100 border-0 audience ">
+                    <p class="card-text ">
+                        Total Data Audience:
+                    </p>
+                    <h2 class="card-title py-1">
+                        1,272,996
+                    </h2>
+                    <p class="card-text ">
+                        <i class="fa-solid fa-user-group text-primary "></i> Cretivox
+                    </p>
+                </div>
+            </div>
+            <div class="col col-xl-2 py-3 ">
+                <div class="card card-body h-100 border-0 audience ">
+                    <p class="card-text ">
+                        Total Video:
+                    </p>
+                    <h2 class="card-title py-1" id="vidCount">
+                        Loading..
+                    </h2>
+                    <p class="card-text ">
+                        <i class="fa-brands fa-youtube text-danger "></i> Cretivox
+                    </p>
+                </div>
+            </div>
+            <div class="col col-xl-2 py-3 ">
+                <div class="card card-body h-100 border-0 audience ">
+                    <p class="card-text ">
+                        Avg Views / Video:
+                    </p>
+                    <h2 class="card-title py-1" id="avgViews">
+                        Loading..
+                    </h2>
+                    <p class="card-text ">
+                        <i class="fa-brands fa-youtube text-danger "></i> Cretivox
+                    </p>
+                </div>
+            </div>
+            <div class="col col-xl-3 py-3 ">
+                <div class="card card-body h-100 border-0 compro">
+                    <video src="https://cretivox.com/CompanyProfileCretivox.mp4" autoplay muted loop controls></video>
+                </div>
+            </div>
+            <!-- Section Social Media -->
+            <div class="col col-xl-9 ">
+                <div id="carouselExampleIndicators" class="carousel slide " data-ride="carousel">
+                    <div class="carousel-inner ">
+                        <div class="carousel-item active ">
+                            <div class="row ">
+                                <div class="col col-xl-4 pt-3 ">
+                                    <div class="card card-body h-100 text-left border-0 list-sosmed ">
+                                        <div class="media ">
+                                            <img src="/static/asets/cretivox.jpg" class="mr-3 " alt="... ">
+                                            <div class="media-body">
+                                                <h5 class="mt-0">Cretivox</h5>
+                                                <p>Followers: {{cvox1}}</p>
+                                                <p>Engagement Rate: {{cvox2}}</p>
+                                            </div>
+                                            <div class="float-right">
+                                                <i class="fa-brands fa-instagram fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col col-xl-4 pt-3 ">
+                                    <div class="card card-body h-100 text-left border-0 list-sosmed ">
+                                        <div class="media ">
+                                            <img src="/static/asets/condfe.jpg " class="mr-3 " alt="... ">
+                                            <div class="media-body ">
+                                                <h5 class="mt-0 ">Condfe</h5>
+                                                <p>Followers: {{condfe1}}</p>
+                                                <p>Engagement Rate: {{condfe2}}</p>
+                                            </div>
+                                            <div class="float-right ">
+                                                <i class="fa-brands fa-instagram fa-2x "></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col col-xl-4 pt-3 ">
+                                    <div class="card card-body h-100 text-left border-0 list-sosmed ">
+                                        <div class="media ">
+                                            <img src="/static/asets/ogs.jpg " class="mr-3 " alt="... ">
+                                            <div class="media-body ">
+                                                <h5 class="mt-0 ">Overon Gaming</h5>
+                                                <p>Followers: {{ogs1}}</p>
+                                                <p>Engagement Rate: {{ogs2}}</p>
+                                            </div>
+                                            <div class="float-right ">
+                                                <i class="fa-brands fa-instagram fa-2x "></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- <div class="col col-xl-3 pt-3 ">
+                                    <div class="card card-body h-100 text-left border-0 list-sosmed ">
+                                        <div class="media ">
+                                            <img src="/static/asets/thegisto.jpg " class="mr-3 " alt="... ">
+                                            <div class="media-body ">
+                                                <h5 class="mt-0 ">Thegisto</h5>
+                                                <p>Followers: null</p>
+                                                <p>Engagement Rate: null</p>
+                                            </div>
+                                            <div class="float-right ">
+                                                <i class="fa-brands fa-instagram fa-2x "></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div> -->
+                            </div>
+                        </div>
+                        <div class="carousel-item ">
+                            <div class="row ">
+                                <div class="col col-xl-4 pt-3 ">
+                                    <div class="card card-body h-100 text-left border-0 list-sosmed ">
+                                        <div class="media ">
+                                            <img src="/static/asets/cretivox.jpg " class="mr-3 " alt="... ">
+                                            <div class="media-body ">
+                                                <h5 class="mt-0 ">Cretivox</h5>
+                                                <p>Followers: {{voxTik1}}</p>
+                                                <p>ER Profile: {{voxTik2}}</p>
+                                                <!-- <p>ER of last 30 post: {{voxTik3}}</p> -->
+                                            </div>
+                                            <div class="float-right ">
+                                                <i class="fa-brands fa-tiktok fa-2x "></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col col-xl-4 pt-3 ">
+                                    <div class="card card-body h-100 text-left border-0 list-sosmed ">
+                                        <div class="media ">
+                                            <img src="/static/asets/condfe.jpg " class="mr-3 " alt="... ">
+                                            <div class="media-body "> 
+                                                <h5 class="mt-0 ">Condfe</h5>
+                                                <p>Followers: {{cnfTik1}}</p>
+                                                <p>ER Profile: {{cnfTik2}}</p>
+                                                <!-- <p>ER of last 30 post: {{cnfTik3}}</p> -->
+                                            </div>
+                                            <div class="float-right ">
+                                                <i class="fa-brands fa-tiktok fa-2x "></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col col-xl-4 pt-3 ">
+                                    <div class="card card-body h-100 text-left border-0 list-sosmed ">
+                                        <div class="media ">
+                                            <img src="/static/asets/ogs.jpg " class="mr-3 " alt="... ">
+                                            <div class="media-body ">
+                                                <h5 class="mt-0 ">Overon Gaming</h5>
+                                                <p>Followers: {{ogsTik1}}</p>
+                                                <p>ER Profile: {{ogsTik2}}</p>
+                                                <!-- <p>ER of last 30 post: {{ogsTik3}}</p> -->
+                                            </div>
+                                            <div class="float-right ">
+                                                <i class="fa-brands fa-tiktok fa-2x "></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- <div class="col col-xl-3 pt-3 ">
+                                    <div class="card card-body h-100 text-left border-0 list-sosmed ">
+                                        <div class="media ">
+                                            <img src="/static/asets/thegisto.jpg " class="mr-3 " alt="... ">
+                                            <div class="media-body ">
+                                                <h5 class="mt-0 ">Thegisto</h5>
+                                                <p>Followers: null</p>
+                                                <p>ER Profile: null</p>
+                                                <p>ER of last 30 post: null</p>
+                                            </div>
+                                            <div class="float-right ">
+                                                <i class="fa-brands fa-tiktok fa-2x "></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 pt-3">
+                <div class="card card-body h-100 border-0">
+                    <div class="er-info">
+                        <h5>Good Engagement Rate:</h5>
+                        <p>Instagram: <span class="badge badge-primary">1.57% - 3.56%</span></p>
+                        <p>TikTok: <span class="badge badge-primary"> 19% - 20%</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-1 pt-3">
+                <div class="card card-body h-100 border-0">
+                    <div class="middle">
+                        <p>how it works?</p>
+                    </div>
+                </div>
+            </div>
+            <!-- <div class="col col-xl-2 py-3 ">
+                <div class="card card-body h-100 text-left border-0 list-sosmed ">
+                </div>
+            </div> -->
+        </div>
+
+        <!-- Modals -->
+        <!-- Modal HTML -->
+        <div id="myModal" class="modal fade">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="embed-responsive embed-responsive-16by9">
+                            <iframe id="lastVideoUpload" class="embed-responsive-item" width="560" height="315" src="" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal -->
+    </div>
+
+    <!-- Modal -->
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js " integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo " crossorigin="anonymous "></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js " integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 " crossorigin="anonymous "></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js " integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM " crossorigin="anonymous "></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js "></script>
+    <script src="/static/js/script.js "></script>
+    <script src="/static/js/grt-youtube-popup.js"></script>
+    <script>
+        $(".youtube-link").grtyoutube({
+            autoPlay: true
+        });
+    </script>
+</body>
+<footer class="footer ">
+    <div class="container text-center ">
+        <span class="text-muted ">©2022 By Cretivox Technology</span>
+    </div>
+</footer>
+
+</html>
