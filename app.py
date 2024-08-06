@@ -1,4 +1,4 @@
-from flask import Flask, redirect, request, jsonify, render_template, url_for, session, Response
+from flask import Flask, render_template,Response
 
 #trend
 from pytrends.request import TrendReq
@@ -59,10 +59,10 @@ def send_get_request( url, params, extra_headers=None):
 
 def get_cookiefile():
     default_cookiefile = {
-        # "Windows": "~/AppData/Roaming/Mozilla/Firefox/Profiles/*/cookies.sqlite",
-        # "Darwin": "~/Library/Application Support/Firefox/Profiles//cookies.sqlite",
-        "Windows": "cookies.sqlite",
-        "Darwin": "cookies.sqlite",
+        "Windows": "~/AppData/Roaming/Mozilla/Firefox/Profiles/*/cookies.sqlite",
+        "Darwin": "~/Library/Application Support/Firefox/Profiles//cookies.sqlite",
+        # "Windows": "cookies.sqlite",
+        # "Darwin": "cookies.sqlite",
     }.get(system(), "~/.mozilla/firefox/*/cookies.sqlite")
     print(default_cookiefile)
     cookiefiles = glob(expanduser(default_cookiefile))
@@ -219,6 +219,11 @@ import autopy
 # import face_recognition
 from PIL import Image
 
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.models import load_model
+from imutils.video import VideoStream
+
 engine = pyttsx3.init()
 Wcam, Hcam = 640, 480
 frameR = 100
@@ -244,37 +249,94 @@ smoothening = 5
 plocX, plocY = 0, 0
 clocX, clocY = 0, 0
 
+def detect_and_predict_mask(frame, faceNet, maskNet):
+    h = 480
+    w = 640
+    blob = cv2.dnn.blobFromImage(frame, 1.0, (224, 224),
+		(104.0, 177.0, 123.0))
+
+    faceNet.setInput(blob)
+    detections = faceNet.forward()
+    print(detections.shape)
+
+    faces = []
+    locs = []
+    preds = []
+
+    for i in range(0, detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
+        if confidence > 0.5:
+            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+            (startX, startY, endX, endY) = box.astype("int")
+
+            (startX, startY) = (max(0, startX), max(0, startY))
+            (endX, endY) = (min(w - 1, endX), min(h - 1, endY))
+
+            face = frame[startY:endY, startX:endX]
+            face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
+            face = cv2.resize(face, (224, 224))
+            face = img_to_array(face)
+            face = preprocess_input(face)
+
+            faces.append(face)
+            locs.append((startX, startY, endX, endY))
+
+    if len(faces) > 0:
+
+        faces = np.array(faces, dtype="float32")
+        preds = maskNet.predict(faces, batch_size=32)
+
+    return (locs, preds)
+
+prototxtPath = r"face_detector\\deploy.prototxt"
+weightsPath = r"face_detector\\res10_300x300_ssd_iter_140000.caffemodel"
+faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
+maskNet = load_model("mask_detector.model")
+
 def gen():
     #global id
     while True:
         global frame, pTime, plocX ,plocY, clocX,clocY
         success, img = cap.read()
-        
+        (locs, preds) = detect_and_predict_mask(img, faceNet, maskNet)
         img = detector.findHands(img)
         # img =cv2.flip(img,1)
         lmList, bbox = detector.findPosition(img)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = faceDetect.detectMultiScale(gray, 1.3, 5)
-        for (x, y, w, h) in faces:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            id, conf = recognizer.predict(gray[y:y+h, x:x+w])
-            if (id == 1) :
-                id = "rohim"
-            if (id == 2) :
-                id = "agis"
-            if (id == 3):
-                id = "Bebed"
-            else:
-                id = "unregistered"
+        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # faces = faceDetect.detectMultiScale(gray, 1.3, 5)
+        for (box, pred) in zip(locs, preds):
+    
+            (startX, startY, endX, endY) = box
+            (mask, withoutMask) = pred
+
+            label = "Keren lo !" if mask > withoutMask else "Pake Masker ajg !!"
+            color = (0, 255, 0) if label == "Keren lo !" else (0, 0, 255)
+
+            label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+
+            cv2.putText(img, label, (startX, startY - 10),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+            cv2.rectangle(img, (startX, startY), (endX, endY), color, 2)
+        # for (x, y, w, h) in faces:
+        #     cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        #     id, conf = recognizer.predict(gray[y:y+h, x:x+w])
+        #     if (id == 1) :
+        #         id = "rohim"
+        #     if (id == 2) :
+        #         id = "agis"
+        #     if (id == 3):
+        #         id = "Bebed"
+        #     else:
+        #         id = "unregistered"
             
 
-            say1 = "Hello " + id
+        #     say1 = "Hello " + id
 
             
-            # img =cv2.flip(img,1)
-            # cv2.putText(img, str(id), (x+40,y-10), cv2.FONT_HERSHEY_DUPLEX,1,(0,255))
-            cv2.putText(img, say1, (50, 80),
-                        cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+        #     # img =cv2.flip(img,1)
+        #     # cv2.putText(img, str(id), (x+40,y-10), cv2.FONT_HERSHEY_DUPLEX,1,(0,255))
+        #     cv2.putText(img, say1, (50, 80),
+        #                 cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
            
         if len(lmList)!=0: 
             x0 , y0 = lmList[4][1:]
@@ -335,7 +397,7 @@ def Home():
         print(url)
         response = requests.get(url) 
         soup = BeautifulSoup(response.text, 'lxml')
-
+ 
         page = soup.find_all('a',{'class':'page-numbers'})
         page = page[len(page)-2]
         # print(page.get_text())
@@ -412,81 +474,87 @@ def Home():
         print(user, " || " , retval,  " || ", retval['statusCode'])
         if retval['statusCode'] == 10000 :
             out = [['maintenance','maintenance','maintenance'],['maintenance','maintenance','maintenance'],['maintenance','maintenance','maintenance']]
-        else:    
+        else:
+            print(retval['userInfo']['stats']['followerCount'])
+            Total_followers = retval['userInfo']['stats']['followerCount']
+            engfol = ((int(retval['userInfo']['stats']['heartCount']) / int(retval['userInfo']['stats']['videoCount'])) / int(retval['userInfo']['stats']['followerCount'])) * 100 
+            engview = 0
             user = retval['userInfo']
-            param = {
-                    "type": 1,
-                    "secUid": "",
-                    "id": user['user']['id'],
-                    "count": int(retval['userInfo']['stats']['videoCount']),
-                    "minCursor": 0,
-                    "maxCursor": 0,
-                    "shareUid": "",
-                    "lang": "",
-                    "verifyFp": "",
-                    }
+            showdata = [Total_followers, str(truncate(engfol)) + "%", str(truncate(engview)) + "%"]
+            out.append(showdata)
+            # param = {
+            #         "type": 1,
+            #         "secUid": "",
+            #         "id": user['user']['id'],
+            #         "count": int(retval['userInfo']['stats']['videoCount']),
+            #         "minCursor": 0,
+            #         "maxCursor": 0,
+            #         "shareUid": "",
+            #         "lang": "",
+            #         "verifyFp": "",
+            #         }
             # url = 'https://www.tiktok.com/node/video/feed'
-            data = requests.get(url, params=param, headers=headers)
-            print("data " , data)
-            data = data.json()
-            print("data " , data )
-            filename = 'user.json'
-            with open(filename, 'w') as file_object:  #open the file in write mode
-                    json.dump(data, file_object)
-            file = open('user.json')
-            dataTik = json.load(file)
-            Like, Comment, Share, Views, Id, dates = [], [], [], [], [], []
-            countdata = len(dataTik['body']['itemListData'])
-            # print(countdata)
-            if countdata <= 28:
-                print("less than 28")
-            else:
-                for i in range(29):
-                    Like.append(dataTik['body']['itemListData'][i]['itemInfos']['diggCount'])
-                    Comment.append(dataTik['body']['itemListData'][i]['itemInfos']['commentCount'])
-                    Share.append(dataTik['body']['itemListData'][i]['itemInfos']['shareCount'])
-                    Views.append(dataTik['body']['itemListData'][i]['itemInfos']['playCount'])
-                    Id.append("https://www.tiktok.com/@cretivox/video/" + dataTik['body']['itemListData'][i]['itemInfos']['id'])
-                    dates.append(datetime.fromtimestamp(int(dataTik['body']['itemListData'][i]['itemInfos']['createTime'])))
-                # print(Like,sum(Like))
-                # print(Comment,sum(Comment))
-                # print(Share,sum(Share))
+            # data = requests.get(url, params=param, headers=headers)
+            # print("data " , data)
+            # data = data.json()
+            # print("data " , data )
+            # filename = 'user.json'
+            # with open(filename, 'w') as file_object:  #open the file in write mode
+            #         json.dump(data, file_object)
+            # file = open('user.json')
+            # dataTik = json.load(file)
+            # Like, Comment, Share, Views, Id, dates = [], [], [], [], [], []
+            # countdata = len(dataTik['body']['itemListData'])
+            # # print(countdata)
+            # if countdata <= 28:
+            #     print("less than 28")
+            # else:
+            #     for i in range(29):
+            #         Like.append(dataTik['body']['itemListData'][i]['itemInfos']['diggCount'])
+            #         Comment.append(dataTik['body']['itemListData'][i]['itemInfos']['commentCount'])
+            #         Share.append(dataTik['body']['itemListData'][i]['itemInfos']['shareCount'])
+            #         Views.append(dataTik['body']['itemListData'][i]['itemInfos']['playCount'])
+            #         Id.append("https://www.tiktok.com/@cretivox/video/" + dataTik['body']['itemListData'][i]['itemInfos']['id'])
+            #         dates.append(datetime.fromtimestamp(int(dataTik['body']['itemListData'][i]['itemInfos']['createTime'])))
+            #     # print(Like,sum(Like))
+            #     # print(Comment,sum(Comment))
+            #     # print(Share,sum(Share))
 
-                # urlTik = dataTik['body']['itemListData'][0]['authorInfos']['coversLarger']
-                # urllib.request.urlretrieve(
-                # str(urlTik[0]),
-                # "G:/CrevHim/Code/software/instagram/analytics/static/pics/TikTok.jpg")
+            #     # urlTik = dataTik['body']['itemListData'][0]['authorInfos']['coversLarger']
+            #     # urllib.request.urlretrieve(
+            #     # str(urlTik[0]),
+            #     # "G:/CrevHim/Code/software/instagram/analytics/static/pics/TikTok.jpg")
 
-                # print("Analytics for last " + str(i + 1) + " videos")
-                # print("Name : " + str(dataTik['body']['itemListData'][0]['authorInfos']['uniqueId']))
-                # print("Bio : " + str(dataTik['body']['itemListData'][0]['authorInfos']['signature']))
+            #     # print("Analytics for last " + str(i + 1) + " videos")
+            #     # print("Name : " + str(dataTik['body']['itemListData'][0]['authorInfos']['uniqueId']))
+            #     # print("Bio : " + str(dataTik['body']['itemListData'][0]['authorInfos']['signature']))
 
-                # print("Like : " + str(sum(Like)))
-                # print("Comment : " + str(sum(Comment)))
-                # print("Share : " + str(sum(Share)))
-                # print("Views : " + str(sum(Views)))
-                # print("Followers : " + str(dataTik['body']['itemListData'][0]['authorStats']['followerCount']))
-                # print("Total Post : " + str(dataTik['body']['itemListData'][0]['authorStats']['videoCount']))
-                # print("Total Like : " + str(dataTik['body']['itemListData'][0]['authorStats']['heartCount']))
-                # print("evg Likes : " + str(
-                #     truncate(sum(Views) / dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) + "%")
-                # print("evg Comment : " + str(
-                #     truncate(sum(Comment) / dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) + "%")
+            #     # print("Like : " + str(sum(Like)))
+            #     # print("Comment : " + str(sum(Comment)))
+            #     # print("Share : " + str(sum(Share)))
+            #     # print("Views : " + str(sum(Views)))
+            #     # print("Followers : " + str(dataTik['body']['itemListData'][0]['authorStats']['followerCount']))
+            #     # print("Total Post : " + str(dataTik['body']['itemListData'][0]['authorStats']['videoCount']))
+            #     # print("Total Like : " + str(dataTik['body']['itemListData'][0]['authorStats']['heartCount']))
+            #     # print("evg Likes : " + str(
+            #     #     truncate(sum(Views) / dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) + "%")
+            #     # print("evg Comment : " + str(
+            #     #     truncate(sum(Comment) / dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) + "%")
 
-                # Name = str(dataTik['body']['itemListData'][0]['authorInfos']['uniqueId'])
-                # Bio = str(dataTik['body']['itemListData'][0]['authorInfos']['signature'])
-                # evglike = str(truncate(sum(Views) / dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) + "%"
-                # evgCom = str(truncate(sum(Comment) / dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) + "%"
-                # engfol = (sum(Like) + sum(Comment) + sum(Share)) / dataTik['body']['itemListData'][0]['authorStats'][
-                    # 'followerCount']
-                engfol = ((int(dataTik['body']['itemListData'][0]['authorStats']['heartCount']) / int(dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) / int(dataTik['body']['itemListData'][0]['authorStats']['followerCount'])) * 100
-                engview = (((sum(Like) + sum(Comment) + sum(Share))) / sum(Views) ) * 100 
-                # Total_post = str(dataTik['body']['itemListData'][0]['authorStats']['videoCount'])
-                # Total_Like = str(dataTik['body']['itemListData'][0]['authorStats']['heartCount'])
-                Total_followers = str(dataTik['body']['itemListData'][0]['authorStats']['followerCount'])
-                # print("engfol : " + str(truncate(engfol)) + "%" + " engview : " + str(truncate(engview)) + "%")
-                showdata = [Total_followers, str(truncate(engfol)) + "%", str(truncate(engview)) + "%"]
-                out.append(showdata)
+            #     # Name = str(dataTik['body']['itemListData'][0]['authorInfos']['uniqueId'])
+            #     # Bio = str(dataTik['body']['itemListData'][0]['authorInfos']['signature'])
+            #     # evglike = str(truncate(sum(Views) / dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) + "%"
+            #     # evgCom = str(truncate(sum(Comment) / dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) + "%"
+            #     # engfol = (sum(Like) + sum(Comment) + sum(Share)) / dataTik['body']['itemListData'][0]['authorStats'][
+            #         # 'followerCount']
+            #     engfol = ((int(dataTik['body']['itemListData'][0]['authorStats']['heartCount']) / int(dataTik['body']['itemListData'][0]['authorStats']['videoCount'])) / int(dataTik['body']['itemListData'][0]['authorStats']['followerCount'])) * 100
+            #     engview = (((sum(Like) + sum(Comment) + sum(Share))) / sum(Views) ) * 100 
+            #     # Total_post = str(dataTik['body']['itemListData'][0]['authorStats']['videoCount'])
+            #     # Total_Like = str(dataTik['body']['itemListData'][0]['authorStats']['heartCount'])
+            #     Total_followers = str(dataTik['body']['itemListData'][0]['authorStats']['followerCount'])
+            #     # print("engfol : " + str(truncate(engfol)) + "%" + " engview : " + str(truncate(engview)) + "%")
+            #     showdata = [Total_followers, str(truncate(engfol)) + "%", str(truncate(engview)) + "%"]
+            #     out.append(showdata)
     # print(out)
     return render_template("index.html",
                     trend1 = trend[0],
